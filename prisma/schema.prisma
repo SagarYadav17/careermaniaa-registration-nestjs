@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model auth_group {
+  id                         Int                          @id @default(autoincrement())
+  name                       String                       @unique @db.VarChar(150)
+  auth_group_permissions     auth_group_permissions[]
+  authentication_user_groups authentication_user_groups[]
+
+  @@index([name], map: "auth_group_name_a6ea08ec_like")
+}
+
+model auth_group_permissions {
+  id              BigInt          @id @default(autoincrement())
+  group_id        Int
+  permission_id   Int
+  auth_permission auth_permission @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_group_permissio_permission_id_84c5c92e_fk_auth_perm")
+  auth_group      auth_group      @relation(fields: [group_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_group_permissions_group_id_b120cbf9_fk_auth_group_id")
+
+  @@unique([group_id, permission_id], map: "auth_group_permissions_group_id_permission_id_0cd325b0_uniq")
+  @@index([group_id], map: "auth_group_permissions_group_id_b120cbf9")
+  @@index([permission_id], map: "auth_group_permissions_permission_id_84c5c92e")
+}
+
+model auth_permission {
+  id                                   Int                                    @id @default(autoincrement())
+  name                                 String                                 @db.VarChar(255)
+  content_type_id                      Int
+  codename                             String                                 @db.VarChar(100)
+  auth_group_permissions               auth_group_permissions[]
+  django_content_type                  django_content_type                    @relation(fields: [content_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_permission_content_type_id_2f476e4b_fk_django_co")
+  authentication_user_user_permissions authentication_user_user_permissions[]
+
+  @@unique([content_type_id, codename], map: "auth_permission_content_type_id_codename_01ab375a_uniq")
+  @@index([content_type_id], map: "auth_permission_content_type_id_2f476e4b")
+}
+
+model authentication_address {
+  id                     BigInt                 @id @default(autoincrement())
+  address                String
+  postal_code            String                 @db.VarChar(20)
+  latitude               Decimal                @db.Decimal(9, 6)
+  longitude              Decimal                @db.Decimal(9, 6)
+  city_id                BigInt
+  profile_id             BigInt
+  authentication_profile authentication_profile @relation(fields: [profile_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_addre_profile_id_10a5910f_fk_authentic")
+  core_city              core_city              @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_address_city_id_94912834_fk_core_city_id")
+
+  @@unique([profile_id, address, postal_code, city_id], map: "authentication_address_profile_id_address_posta_38ecdaa4_uniq")
+  @@index([city_id], map: "authentication_address_city_id_94912834")
+  @@index([profile_id], map: "authentication_address_profile_id_10a5910f")
+}
+
+model authentication_bankdetail {
+  id                      BigInt                  @id @default(autoincrement())
+  account_holder_name     String                  @db.VarChar(255)
+  account_number          BigInt
+  branch_name             String                  @db.VarChar(255)
+  ifsc_code               String                  @db.VarChar(11)
+  attachment              String                  @db.VarChar(100)
+  bank_id                 BigInt
+  profile_id              BigInt
+  authentication_bankname authentication_bankname @relation(fields: [bank_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_bankd_bank_id_5ea358b0_fk_authentic")
+  authentication_profile  authentication_profile  @relation(fields: [profile_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_bankd_profile_id_2aa8bef5_fk_authentic")
+
+  @@unique([profile_id, bank_id, account_number, branch_name, ifsc_code], map: "authentication_bankdetai_profile_id_bank_id_accou_11abdc58_uniq")
+  @@index([bank_id], map: "authentication_bankdetail_bank_id_5ea358b0")
+  @@index([profile_id], map: "authentication_bankdetail_profile_id_2aa8bef5")
+}
+
+model authentication_bankname {
+  id                        BigInt                      @id @default(autoincrement())
+  name                      String                      @unique @db.VarChar(255)
+  is_active                 Boolean
+  authentication_bankdetail authentication_bankdetail[]
+
+  @@index([name], map: "authentication_bankname_name_03ac56a3_like")
+}
+
+model authentication_profile {
+  id                              BigInt                            @id @default(autoincrement())
+  name                            String                            @db.VarChar(255)
+  is_active                       Boolean
+  whatsapp_number                 String                            @db.VarChar(128)
+  pan_number                      String?                           @unique @db.VarChar(10)
+  gstin                           String?                           @unique @db.VarChar(15)
+  email                           String?                           @db.VarChar(254)
+  year_of_establishment           Int?                              @db.SmallInt
+  city_id                         BigInt?
+  authentication_address          authentication_address[]
+  authentication_bankdetail       authentication_bankdetail[]
+  core_city                       core_city?                        @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_profile_city_id_254e99a0_fk_core_city_id")
+  authentication_profile_language authentication_profile_language[]
+  authentication_user             authentication_user?
+
+  @@index([city_id], map: "authentication_profile_city_id_254e99a0")
+  @@index([gstin], map: "authentication_profile_gstin_26087a9c_like")
+  @@index([pan_number], map: "authentication_profile_pan_number_0ccab89f_like")
+}
+
+model authentication_profile_language {
+  id                     BigInt                 @id @default(autoincrement())
+  profile_id             BigInt
+  language_id            String                 @db.VarChar(2)
+  core_language          core_language          @relation(fields: [language_id], references: [iso_639_1], onDelete: NoAction, onUpdate: NoAction, map: "authentication_profi_language_id_0bfa0877_fk_core_lang")
+  authentication_profile authentication_profile @relation(fields: [profile_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_profi_profile_id_a688f0bd_fk_authentic")
+
+  @@unique([profile_id, language_id], map: "authentication_profile_l_profile_id_language_id_b85476a4_uniq")
+  @@index([language_id], map: "authentication_profile_language_language_id_0bfa0877")
+  @@index([language_id], map: "authentication_profile_language_language_id_0bfa0877_like")
+  @@index([profile_id], map: "authentication_profile_language_profile_id_a688f0bd")
+}
+
+model authentication_user {
+  id                                   BigInt                                 @id @default(autoincrement())
+  password                             String                                 @db.VarChar(128)
+  last_login                           DateTime?                              @db.Timestamptz(6)
+  is_superuser                         Boolean
+  created_at                           DateTime                               @db.Timestamptz(6)
+  updated_at                           DateTime                               @db.Timestamptz(6)
+  username                             String                                 @unique @db.VarChar(128)
+  is_active                            Boolean
+  is_staff                             Boolean
+  phonenumber                          String                                 @unique @db.VarChar(128)
+  profile_id                           BigInt                                 @unique
+  usergroup_id                         BigInt
+  authentication_profile               authentication_profile                 @relation(fields: [profile_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_user_profile_id_f454d42c_fk_authentic")
+  authentication_usergroup             authentication_usergroup               @relation(fields: [usergroup_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_user_usergroup_id_c457716d_fk_authentic")
+  authentication_user_groups           authentication_user_groups[]
+  authentication_user_user_permissions authentication_user_user_permissions[]
+  django_admin_log                     django_admin_log[]
+
+  @@index([phonenumber], map: "authentication_user_phonenumber_c6ba24a0_like")
+  @@index([usergroup_id], map: "authentication_user_usergroup_id_c457716d")
+  @@index([username], map: "authentication_user_username_a09a089e_like")
+}
+
+model authentication_user_groups {
+  id                  BigInt              @id @default(autoincrement())
+  user_id             BigInt
+  group_id            Int
+  authentication_user authentication_user @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_user__user_id_30868577_fk_authentic")
+  auth_group          auth_group          @relation(fields: [group_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_user_groups_group_id_6b5c44b7_fk_auth_group_id")
+
+  @@unique([user_id, group_id], map: "authentication_user_groups_user_id_group_id_8af031ac_uniq")
+  @@index([group_id], map: "authentication_user_groups_group_id_6b5c44b7")
+  @@index([user_id], map: "authentication_user_groups_user_id_30868577")
+}
+
+model authentication_user_user_permissions {
+  id                  BigInt              @id @default(autoincrement())
+  user_id             BigInt
+  permission_id       Int
+  auth_permission     auth_permission     @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_user__permission_id_ea6be19a_fk_auth_perm")
+  authentication_user authentication_user @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "authentication_user__user_id_736ebf7e_fk_authentic")
+
+  @@unique([user_id, permission_id], map: "authentication_user_user_user_id_permission_id_ec51b09f_uniq")
+  @@index([permission_id], map: "authentication_user_user_permissions_permission_id_ea6be19a")
+  @@index([user_id], map: "authentication_user_user_permissions_user_id_736ebf7e")
+}
+
+model authentication_usergroup {
+  id                  BigInt                @id @default(autoincrement())
+  name                String                @unique @db.VarChar(255)
+  is_active           Boolean
+  authentication_user authentication_user[]
+
+  @@index([name], map: "authentication_usergroup_name_7ab7b737_like")
+}
+
+model core_city {
+  id                     BigInt                   @id @default(autoincrement())
+  name                   String                   @db.VarChar(100)
+  state_id               BigInt
+  authentication_address authentication_address[]
+  authentication_profile authentication_profile[]
+  core_state             core_state               @relation(fields: [state_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "core_city_state_id_9aa9e056_fk_core_state_id")
+
+  @@index([state_id], map: "core_city_state_id_9aa9e056")
+}
+
+model core_country {
+  id           BigInt       @id @default(autoincrement())
+  name         String       @db.VarChar(255)
+  iso3         String       @unique @db.VarChar(3)
+  iso2         String       @unique @db.VarChar(2)
+  numeric_code Int          @unique
+  phone_code   Int
+  region       String       @db.VarChar(255)
+  core_state   core_state[]
+
+  @@index([iso2], map: "core_country_iso2_2cb36b0b_like")
+  @@index([iso3], map: "core_country_iso3_a14a463a_like")
+}
+
+model core_expertise {
+  id        BigInt  @id @default(autoincrement())
+  name      String  @unique @db.VarChar(255)
+  is_active Boolean
+
+  @@index([name], map: "core_expertise_name_5ef25b7c_like")
+}
+
+model core_language {
+  iso_639_1                       String                            @id @db.VarChar(2)
+  iso_639_2T                      String                            @unique @db.VarChar(3)
+  iso_639_2B                      String                            @unique @db.VarChar(3)
+  iso_639_3                       String                            @db.VarChar(3)
+  name_en                         String                            @db.VarChar(100)
+  name_native                     String                            @db.VarChar(100)
+  family                          String                            @db.VarChar(50)
+  authentication_profile_language authentication_profile_language[]
+
+  @@index([iso_639_1], map: "core_language_iso_639_1_35851f98_like")
+  @@index([iso_639_2B], map: "core_language_iso_639_2B_97ab35de_like")
+  @@index([iso_639_2T], map: "core_language_iso_639_2T_d2f26a18_like")
+}
+
+model core_state {
+  id           BigInt       @id @default(autoincrement())
+  name         String       @db.VarChar(255)
+  state_code   String       @db.VarChar(255)
+  country_id   BigInt
+  core_city    core_city[]
+  core_country core_country @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "core_state_country_id_5a16f697_fk_core_country_id")
+
+  @@index([country_id], map: "core_state_country_id_5a16f697")
+}
+
+model django_admin_log {
+  id                  Int                  @id @default(autoincrement())
+  action_time         DateTime             @db.Timestamptz(6)
+  object_id           String?
+  object_repr         String               @db.VarChar(200)
+  action_flag         Int                  @db.SmallInt
+  change_message      String
+  content_type_id     Int?
+  user_id             BigInt
+  django_content_type django_content_type? @relation(fields: [content_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "django_admin_log_content_type_id_c4bce8eb_fk_django_co")
+  authentication_user authentication_user  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "django_admin_log_user_id_c564eba6_fk_authentication_user_id")
+
+  @@index([content_type_id], map: "django_admin_log_content_type_id_c4bce8eb")
+  @@index([user_id], map: "django_admin_log_user_id_c564eba6")
+}
+
+model django_content_type {
+  id               Int                @id @default(autoincrement())
+  app_label        String             @db.VarChar(100)
+  model            String             @db.VarChar(100)
+  auth_permission  auth_permission[]
+  django_admin_log django_admin_log[]
+
+  @@unique([app_label, model], map: "django_content_type_app_label_model_76bd3d3b_uniq")
+}
+
+model django_migrations {
+  id      BigInt   @id @default(autoincrement())
+  app     String   @db.VarChar(255)
+  name    String   @db.VarChar(255)
+  applied DateTime @db.Timestamptz(6)
+}
+
+model django_session {
+  session_key  String   @id @db.VarChar(40)
+  session_data String
+  expire_date  DateTime @db.Timestamptz(6)
+
+  @@index([expire_date], map: "django_session_expire_date_a5c62663")
+  @@index([session_key], map: "django_session_session_key_c0390e0f_like")
+}
